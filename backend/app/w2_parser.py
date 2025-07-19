@@ -26,8 +26,7 @@ except ImportError:
 
 from app.errors import W2ParseError
 
-TESSERACT_CONFIG_NUM = "--psm 6 -c tessedit_char_whitelist=0123456789.
-"
+TESSERACT_CONFIG_NUM = "--psm 6 -c tessedit_char_whitelist=0123456789."
 
 class W2Parser:
     """Parse W-2 data from PDFs or images with advanced OCR preprocessing."""
