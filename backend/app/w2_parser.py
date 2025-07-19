@@ -110,19 +110,100 @@ class W2Parser:
         return None if not is_number else 0.0
 
     def _parse_text(self, txt: str) -> Dict[str, Any]:
-        if not txt:
-            raise W2ParseError('Empty text extracted from document')
-        txt = self._clean_text(txt)
-        logger.info(f"Extracted W-2 text: {txt[:500]}...")  # Log first 500 chars
-        data: Dict[str, Any] = {}
-        # Map which fields are numbers
-        number_fields = {
-            'wages', 'federal_withholding', 'social_security_wages', 'social_security_tax',
-            'medicare_wages', 'medicare_tax', 'state_wages', 'state_withholding'
-        }
-        for key, patterns in self._patterns.items():
-            data[key] = self._extract_field(patterns, txt, is_number=(key in number_fields))
-        return data
+    if not txt:
+        raise W2ParseError('Empty text extracted from document')
+    txt = self._clean_text(txt)
+    logger.info(f"Extracted W-2 text: {txt[:500]}...")  # Log first 500 chars
+
+    data: Dict[str, Any] = {}
+
+    # EIN, Wages, Federal Withholding (all together)
+    ein_block = re.search(
+        r"Employer identitication number \(EIN\)\s*1 Wages, tips, other compensation\s*2 Federal income tax withheld\s*([A-Z0-9]+)\s+([0-9]+)\s+([0-9]+)",
+        txt, re.I)
+    if ein_block:
+        data["employer_ein"] = ein_block.group(1)
+        data["wages"] = float(ein_block.group(2))
+        data["federal_withholding"] = float(ein_block.group(3))
+    else:
+        data["employer_ein"] = None
+        data["wages"] = 0.0
+        data["federal_withholding"] = 0.0
+
+    # Social Security Wages & Tax
+    ss_block = re.search(
+        r"3 social security wages 4 social security tax withheld\s*([0-9]+)\s+([0-9]+)",
+        txt, re.I)
+    if ss_block:
+        data["social_security_wages"] = float(ss_block.group(1))
+        data["social_security_tax"] = float(ss_block.group(2))
+    else:
+        data["social_security_wages"] = 0.0
+        data["social_security_tax"] = 0.0
+
+    # Medicare Wages & Tax
+    med_block = re.search(
+        r"5 Medicare wages and tips 6 Medicare tax withheld\s*([0-9]+)\s+([0-9]+)",
+        txt, re.I)
+    if med_block:
+        data["medicare_wages"] = float(med_block.group(1))
+        data["medicare_tax"] = float(med_block.group(2))
+    else:
+        data["medicare_wages"] = 0.0
+        data["medicare_tax"] = 0.0
+
+    # Employee's first and last name
+    name_block = re.search(
+        r"Employee'?s? first name and initial\s*([A-Z ]+)\s*Last name\s*([A-Z ]+)",
+        txt, re.I)
+    if name_block:
+        data["employee_first_name"] = name_block.group(1).strip()
+        data["employee_last_name"] = name_block.group(2).strip()
+    else:
+        data["employee_first_name"] = None
+        data["employee_last_name"] = None
+
+    # Employee SSN
+    ssn_block = re.search(
+        r"Employee'?s? social security number\s*([0-9\-]{9,})",
+        txt, re.I)
+    if ssn_block:
+        data["employee_ssn"] = ssn_block.group(1)
+    else:
+        data["employee_ssn"] = None
+
+    # Employer name/address
+    emp_addr_block = re.search(
+        r"Employers name, address, and ZIP code\s*([A-Z0-9 ,.-]+)",
+        txt, re.I)
+    if emp_addr_block:
+        data["employer_name"] = emp_addr_block.group(1).strip()
+    else:
+        data["employer_name"] = None
+
+    # State and Employer State ID
+    state_block = re.search(
+        r"15 State\s*([A-Z]{2})\s*Employer'?s? state ID number:\s*([A-Z0-9]+)",
+        txt, re.I)
+    if state_block:
+        data["state"] = state_block.group(1)
+        data["employer_state_id"] = state_block.group(2)
+    else:
+        data["state"] = None
+        data["employer_state_id"] = None
+
+    # State wages and withholding
+    state_wage_block = re.search(
+        r"16 State wages, tips, etc\.\s*([0-9]+)\s*17 State income tax\s*([0-9]+)",
+        txt, re.I)
+    if state_wage_block:
+        data["state_wages"] = float(state_wage_block.group(1))
+        data["state_withholding"] = float(state_wage_block.group(2))
+    else:
+        data["state_wages"] = 0.0
+        data["state_withholding"] = 0.0
+
+    return data
 
     def _parse_pdf(self, path: str) -> str:
         if not pdfplumber:
