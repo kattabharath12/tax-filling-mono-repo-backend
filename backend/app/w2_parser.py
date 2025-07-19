@@ -1,5 +1,3 @@
-# Create a corrected w2_parser.py file
-corrected_w2_parser = '''
 import os
 import re
 import tempfile
@@ -35,24 +33,24 @@ class W2Parser:
 
     _patterns = {
         # Employer + Employee Info
-        'employer_name': re.compile(r"Employer's name\\s*:?\\s*(.+?)\\s{2,}"),
-        'employee_name': re.compile(r"Employee's name(?:\\s+)?(.+?)\\s{2,}"),
-        'employer_ein': re.compile(r"Employer's EIN\\s*:?\\s*([0-9\\-]{10})"),
+        'employer_name': re.compile(r"Employer's name\s*:?\s*(.+?)\s{2,}"),
+        'employee_name': re.compile(r"Employee's name(?:\s+)?(.+?)\s{2,}"),
+        'employer_ein': re.compile(r"Employer's EIN\s*:?\s*([0-9\-]{10})"),
         # Federal boxes
-        'wages': re.compile(r"Wages, tips, other comp\\.\\s*\\$?([0-9,\\.]+)"),
-        'federal_withholding': re.compile(r"Federal income tax withheld\\s*\\$?([0-9,\\.]+)"),
+        'wages': re.compile(r"Wages, tips, other comp\.\s*\$?([0-9,\.]+)"),
+        'federal_withholding': re.compile(r"Federal income tax withheld\s*\$?([0-9,\.]+)"),
         # Social security / Medicare
-        'social_security_wages': re.compile(r"Social security wages\\s*\\$?([0-9,\\.]+)"),
-        'social_security_tax': re.compile(r"Social security tax withheld\\s*\\$?([0-9,\\.]+)"),
-        'medicare_wages': re.compile(r"Medicare wages and tips\\s*\\$?([0-9,\\.]+)"),
-        'medicare_tax': re.compile(r"Medicare tax withheld\\s*\\$?([0-9,\\.]+)"),
+        'social_security_wages': re.compile(r"Social security wages\s*\$?([0-9,\.]+)"),
+        'social_security_tax': re.compile(r"Social security tax withheld\s*\$?([0-9,\.]+)"),
+        'medicare_wages': re.compile(r"Medicare wages and tips\s*\$?([0-9,\.]+)"),
+        'medicare_tax': re.compile(r"Medicare tax withheld\s*\$?([0-9,\.]+)"),
         # State boxes
-        'state_wages': re.compile(r"State wages, tips, etc\\.\\s*\\$?([0-9,\\.]+)"),
-        'state_withholding': re.compile(r"State income tax\\s*\\$?([0-9,\\.]+)"),
+        'state_wages': re.compile(r"State wages, tips, etc\.\s*\$?([0-9,\.]+)"),
+        'state_withholding': re.compile(r"State income tax\s*\$?([0-9,\.]+)"),
     }
 
     def _clean_text(self, txt: str) -> str:
-        return re.sub(r"\\s+", " ", txt)
+        return re.sub(r"\s+", " ", txt)
 
     def _extract_number(self, pattern: re.Pattern, txt: str) -> float:
         m = pattern.search(txt)
@@ -81,7 +79,7 @@ class W2Parser:
         with pdfplumber.open(path) as pdf:
             for page in pdf.pages:
                 text_parts.append(page.extract_text() or '')
-        return "\\n".join(text_parts)
+        return "\n".join(text_parts)
 
     # Image OCR helpers
     def _preprocess_image(self, img_path: str) -> str:
@@ -136,9 +134,3 @@ class W2Parser:
                 return self._parse_text(raw), 'image'
         except Exception as e:
             raise W2ParseError(str(e)) from e
-'''
-
-with open('corrected_w2_parser.py', 'w') as f:
-    f.write(corrected_w2_parser.strip())
-
-print("Created corrected w2_parser.py file")
